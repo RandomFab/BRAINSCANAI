@@ -3,10 +3,27 @@ name = "brainscanai"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11,<3.14"
 dependencies = [
-    "ipykernel>=7.1.0",
+    "hdbscan>=0.8.41",
+    "ipykernel>=6.30.1",
     "matplotlib>=3.10.8",
+    "numpy==2.3.2",
     "pandas>=3.0.0",
     "pillow>=12.1.0",
+    "pyarrow>=23.0.0",
+    "scikit-learn>=1.8.0",
+    "torch>=2.10.0",
+    "torchvision>=0.25.0",
+    "tqdm>=4.67.1",
+    "umap-learn>=0.5.11",
 ]
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+torchvision = { index = "pytorch" }
