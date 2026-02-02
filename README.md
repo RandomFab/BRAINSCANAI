@@ -20,7 +20,41 @@ L'enjeu majeur est d'automatiser le tri des images IRM selon leur orientation (f
 - ✅ **Clustering Intelligent** : Identification automatique des orientations d'images avec HDBSCAN.
 - ✅ **Visualisation Haute Dimension** : Projection des données dans un espace 2D avec UMAP pour l'analyse visuelle.
 - ✅ **Auto-Labellisation (Weak Labeling)** : Propagation automatique des labels d'orientation aux images non étiquetées.
-- ✅ **Exploration de Données** : Notebooks dédiés à l'analyse exploratoire et au traitement des embeddings.
+
+---
+
+### 🧠 Synthèse des résultats & enseignements
+
+
+#### 📈 Clustering & orientation
+Le clustering non supervisé (UMAP + HDBSCAN) sépare parfaitement les 3 orientations (Top, Side, Face). L'orientation est la source de variance **primaire** dans les images IRM.
+
+#### 🩺 Clustering pathologique (Cancer vs Normal)
+Le benchmark K-Means (non supervisé) montre des performances faibles pour distinguer Cancer vs Normal, que ce soit en 2D (UMAP) ou en 128D (PCA). Cela prouve que la pathologie n'est pas une caractéristique naturelle évidente des données brutes :
+- La structure géométrique globale d'une IRM "Cancer" est trop proche de celle d'un patient "Normal" pour être séparée sans supervision.
+- L'approche **Semi-Supervisée (SSL)**, avec pseudo-labeling et validation stricte, est indispensable pour apprendre à ignorer le bruit anatomique et se concentrer sur les marqueurs de tumeur.
+
+
+#### 🏆 Performances du modèle semi-supervisé (SSL)
+Le modèle entraîné en semi-supervisé (ResNet50 + pseudo-labeling) atteint des performances robustes sur la détection Cancer vs Normal.
+
+Les résultats sont visualisés directement dans le notebook `notebooks/Entrainement_semi_supervisé.ipynb` :
+- **Courbe F1-score** (moyenne glissante)
+- **Courbes de loss** (train/val)
+- **Matrice de confusion** (Cancer vs Normal)
+
+👉 **Consultez les graphiques du notebook pour une évaluation complète et à jour des performances.**
+
+#### 🤖 Auto-Encodeurs (AE) : intérêt et limites
+Un auto-encodeur pourrait apprendre les caractéristiques spécifiques des IRM, mais il se concentrerait surtout sur la reconstruction de l'anatomie (majoritaire dans les données) et non sur la tumeur (signal faible). Pour évaluer un AE :
+- **Erreur de reconstruction (MSE)** : Quantitatif.
+- **Inspection visuelle** : Qualitatif.
+- **Pertinence de l'espace latent** : UMAP sur le goulot d'étranglement.
+Dans ce projet, l'AE standard n'apporte pas de gain par rapport au ResNet pour la séparation pathologique.
+
+#### 🔁 SSL & pseudo-labeling : stratégie
+La stratégie de pseudo-labeling par seuils (0.05/0.95) et validation stricte sur labels humains permet d'augmenter le dataset sans fuite de données. Une seconde passe permet de récupérer les images "neutres" (zone d'incertitude) et d'améliorer la couverture du jeu d'entraînement.
+
 
 ---
 

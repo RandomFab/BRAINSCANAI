@@ -9,3 +9,9 @@ GRIS_CLAIR = '#3f3f3f'
 JAUNE_FONCE = '#f9ab2d'
 JAUNE_CLAIR = '#f7e096ff'
 PALETTE = [VIOLET_CLAIR, VIOLET_FONCE, GRIS_CLAIR, JAUNE_FONCE, JAUNE_CLAIR,'#212E53','#4A919E','#BED3C3','#EBACA2','#226D68','#CE6A6B','#08C5D1','#D46F4D', '#430C05','#18534F','#696969']
+
+# --- data paths ---
+cancer_csv = BASE_DIR / "mri_dataset_brain_cancer_oc" / "avec_labels" / "summary_cancer_images.csv"
+normal_csv = BASE_DIR / "mri_dataset_brain_cancer_oc" / "avec_labels" / "summary_normal_images.csv"
+image_orientation = BASE_DIR / "mri_dataset_brain_cancer_oc" / "images_orientation.parquet"
+features = BASE_DIR / "mri_dataset_brain_cancer_oc" / "features.parquet"
