@@ -1,55 +1,94 @@
-# 🚀 BrainScanAI
+# 🧠 BrainScanAI
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.10.0+-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.8.0+-orange?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.128+-green.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![UV](https://img.shields.io/badge/UV-Package--Manager-blue.svg?logo=uv&logoColor=white)](https://github.com/astral-sh/uv)
+[![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.10.0-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.8.0-orange?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![UMAP](https://img.shields.io/badge/UMAP-0.5.11-green)](https://umap-learn.readthedocs.io/)
+[![HDBSCAN](https://img.shields.io/badge/HDBSCAN-0.8.41-blue)](https://hdbscan.readthedocs.io/)
 
-**BrainScanAI** est une solution experte de détection et classification automatique de pathologies cérébrales (Cancer vs Normal) par IRM. Ce projet implémente une architecture de **Semi-Supervised Learning (SSL)** pour pallier le manque de données médicales expertes.
+**BrainScanAI** est une solution de pointe pour la détection et la classification automatique de tumeurs cérébrales à partir d'images IRM. Le projet combine l'extraction de caractéristiques par Deep Learning et des techniques de clustering non supervisé pour organiser et annoter intelligemment les données médicales.
 
 ---
 
 ### 🎯 Objectif du projet
 
-L'objectif est de transformer une masse de données brutes (~1400 images inconnues) en un dataset qualifié et un modèle de détection robuste. Le projet repose sur l'extraction d'embeddings profonds (Transfer Learning via ResNet-50) et une stratégie de **Pseudo-Labeling** pour étendre le jeu d'entraînement supervisé initial (100 images).
+L'enjeu majeur est d'automatiser le tri des images IRM selon leur orientation (face, côté, haut) et de détecter la présence de tumeurs. En utilisant des embeddings extraits via ResNet et des algorithmes comme HDBSCAN et UMAP, nous parvenons à structurer des datasets non étiquetés pour accélrer le diagnostic médical.
 
 ### ✨ Fonctionnalités
 
-- ✅ **Extraction de Features** : Transformation des images IRM en vecteurs de 2048 dimensions via ResNet-50.
-- ✅ **Nettoyage Automatisé** : Suppression des images corrompues par analyse de l'intensité des pixels (`mean` & `std`).
-- ✅ **Clustering d'Orientation** : Tri automatique des vues (Axial, Sagittal, Coronal) via PCA-UMAP-HDBSCAN.
-- ✅ **Filtrage du Bruit** : Exclusion des images non-anatomiques identifiées comme "bruit" par HDBSCAN.
-- ✅ **Semi-Supervised Learning** : Pseudo-Labeling à haute confiance (95%+) pour le fine-tuning du classifieur.
+- ✅ **Extraction de Features** : Utilisation de modèles pré-entraînés (ResNet/Torchvision) pour transformer les images en vecteurs mathématiques.
+- ✅ **Clustering Intelligent** : Identification automatique des orientations d'images avec HDBSCAN.
+- ✅ **Visualisation Haute Dimension** : Projection des données dans un espace 2D avec UMAP pour l'analyse visuelle.
+- ✅ **Auto-Labellisation (Weak Labeling)** : Propagation automatique des labels d'orientation aux images non étiquetées.
 
 ---
 
-### 📊 Diagrammes Architecturaux
+### 🧠 Synthèse des résultats & enseignements
 
-#### Architecture de Traitement
+
+#### 📈 Clustering & orientation
+Le clustering non supervisé (UMAP + HDBSCAN) sépare parfaitement les 3 orientations (Top, Side, Face). L'orientation est la source de variance **primaire** dans les images IRM.
+
+#### 🩺 Clustering pathologique (Cancer vs Normal)
+Le benchmark K-Means (non supervisé) montre des performances faibles pour distinguer Cancer vs Normal, que ce soit en 2D (UMAP) ou en 128D (PCA). Cela prouve que la pathologie n'est pas une caractéristique naturelle évidente des données brutes :
+- La structure géométrique globale d'une IRM "Cancer" est trop proche de celle d'un patient "Normal" pour être séparée sans supervision.
+- L'approche **Semi-Supervisée (SSL)**, avec pseudo-labeling et validation stricte, est indispensable pour apprendre à ignorer le bruit anatomique et se concentrer sur les marqueurs de tumeur.
+
+
+#### 🏆 Performances du modèle semi-supervisé (SSL)
+Le modèle entraîné en semi-supervisé (ResNet50 + pseudo-labeling) atteint des performances robustes sur la détection Cancer vs Normal.
+
+Les résultats sont visualisés directement dans le notebook `notebooks/Entrainement_semi_supervisé.ipynb` :
+- **Courbe F1-score** (moyenne glissante)
+- **Courbes de loss** (train/val)
+- **Matrice de confusion** (Cancer vs Normal)
+
+👉 **Consultez les graphiques du notebook pour une évaluation complète et à jour des performances.**
+
+#### 🤖 Auto-Encodeurs (AE) : intérêt et limites
+Un auto-encodeur pourrait apprendre les caractéristiques spécifiques des IRM, mais il se concentrerait surtout sur la reconstruction de l'anatomie (majoritaire dans les données) et non sur la tumeur (signal faible). Pour évaluer un AE :
+- **Erreur de reconstruction (MSE)** : Quantitatif.
+- **Inspection visuelle** : Qualitatif.
+- **Pertinence de l'espace latent** : UMAP sur le goulot d'étranglement.
+Dans ce projet, l'AE standard n'apporte pas de gain par rapport au ResNet pour la séparation pathologique.
+
+#### 🔁 SSL & pseudo-labeling : stratégie
+La stratégie de pseudo-labeling par seuils (0.05/0.95) et validation stricte sur labels humains permet d'augmenter le dataset sans fuite de données. Une seconde passe permet de récupérer les images "neutres" (zone d'incertitude) et d'améliorer la couverture du jeu d'entraînement.
+---
+
+### 🧪 Nettoyage & Qualité des Données
+Afin de répondre aux exigences de traitement des valeurs aberrantes, le projet intègre :
+1. **Filtre d'Intensité** : Suppression des images (pixels mean $\le 10$).
+2. **Filtre de Contraste** : Écart global sur l'écart-type ($std \in [5, 80]$).
+3. **Filtre Structurel** : Utilisation du label `-1` d'HDBSCAN pour rejeter le bruit anatomique.
+
+---
+
+### 📊 Architecture & flux
+
+#### Flux global de traitement
 ```mermaid
 graph TB
-    A[MRI Raw Images] --> B[Nettoyage Technique Intensity/Contrast]
-    B --> C[Extraction Features ResNet-50]
-    C --> D[Réduction Dim PCA/UMAP]
-    D --> E[HDBSCAN Clustering Orientation]
-    E --> F[Filtrage Bruit Label -1]
-    F --> G[Modèle SSL Cancer vs Normal]
-    G --> H[Pseudo-Labels Haute Confiance]
-    H --> G
+    A[MRI Raw Dataset] --> B[Nettoyage Technique Intensity/Contrast]
+    B --> C{ResNet-50 Feature Extractor}
+    C --> D[Embeddings Parquet]
+    D --> E[PCA & HDBSCAN Clustering]
+    E --> F[UMAP Visualization]
+    F --> G[Weak Labeling : Orientation]
+    G --> H[Model SSL : Pathologie Cancer/Normal]
 ```
 
-#### Flux de Travail (SSL)
+#### Séquence d'entraînement semi-supervisée (Pseudo-Labeling)
 ```mermaid
 sequenceDiagram
-    participant D as Dataset (100 labels)
-    participant U as Unlabeled (1400 images)
+    participant L as Labels Experts (100)
+    participant U as Unlabeled (1400)
     participant M as Model (ResNet-50)
     
-    D->>M: 1. Entraînement Initial (Baseline)
-    M->>U: 2. Inférence & Prédictions
-    U->>M: 3. Incorporation Pseudo-Labels (>95%)
-    M->>M: 4. Fine-Tuning Final (Dataset Mixte)
+    L->>M: 1. Entraînement Initial (Baseline)
+    M->>U: 2. Inférence & Probabilités
+    U->>M: 3. Sélection Pseudo-labels (>95%)
+    M->>M: 4. Fine-Tuning Dataset Mixte
 ```
 
 ---
@@ -58,26 +97,22 @@ sequenceDiagram
 
 ```text
 BrainScanAI/
-│
-├── 📂 config/               # Configuration et logging centralisé
-│   ├── config.py           # Chemins et hyperparamètres
-│   └── logger.py           # Gestionnaire de logs
-│
-├── 📂 mri_dataset_brain_cancer_oc/ # Datasets
-│   ├── 📂 avec_labels/      # Ground Truth (Cancer/Normal)
-│   ├── 📂 sans_label/       # Pool d'images pour le SSL
-│   ├── features.parquet     # Embeddings compressés
+├── 📂 config/               # Configuration globale et logging
+│   ├── config.py
+│   └── logger.py
+├── 📂 mri_dataset_brain_cancer_oc/ # Données IRM
+│   ├── 📂 avec_labels/      # Images étiquetées (Cancer/Normal)
+│   ├── 📂 sans_label/       # Images brutes pour le SSL
+│   ├── features.parquet     # Embeddings calculés
 │   └── images_orientation.parquet # Mapping orientations calculé
-│
 ├── 📂 notebooks/            # Workflow Pipeline
-│   ├── 01_Exploration_labelisés.ipynb    # EDA & Labellisation manuelle
-│   ├── 02_Exploration_non_labelisés.ipynb # Analyse du pool brut
-│   ├── 03_Traitement_embeddings.ipynb    # Extraction ResNet-50
-│   ├── 04_Clustering_images.ipynb        # PCA-UMAP-HDBSCAN Orientation
-│   └── 05_Entrainement_semi_supervisé.ipynb # Pipeline SSL & Cleaning final
-│
-├── pyproject.toml           # Gestion des dépendances (UV)
-└── README.md                # Documentation technique
+│   ├── 01_Exploration_labelisés.ipynb
+│   ├── 02_Exploration_non_labelisés.ipynb
+│   ├── 03_Traitement_embeddings.ipynb
+│   ├── 04_Clustering_images.ipynb
+│   └── 05_Entrainement_semi_supervisé.ipynb
+├── pyproject.toml           # Dépendances (UV)
+└── README.md
 ```
 
 ---
@@ -86,44 +121,35 @@ BrainScanAI/
 
 #### Prérequis
 - Python 3.11 à 3.13
-- Gestionnaire de paquets `uv` (recommandé) ou `pip`
+- CUDA 12.8 (optionnel pour l'accélération GPU)
 
-#### Initialisation
-1. **Environnement** :
+#### Installation
+1. Cloner le dépôt :
+   ```bash
+   git clone https://github.com/votre-repo/BrainScanAI.git
+   cd BrainScanAI
+   ```
+2. Installer les dépendances avec `uv` :
    ```bash
    uv sync
-   # ou
-   python -m venv .venv
-   source .venv/bin/activate # Windows: .venv\Scripts\activate
-   pip install -r requirements.txt
    ```
 
-2. **Configuration** :
-   Vérifiez le fichier `config/config.py` pour ajuster les chemins vers vos données.
-
 ---
 
-### 🧪 Nettoyage & Qualité des Données
+### 🧪 Utilisation
 
-Afin de répondre aux exigences de traitement des valeurs aberrantes, le projet intègre :
-1. **Filtre d'Intensité** : Suppression des images dont la moyenne des pixels est $\le 10$ (images noires/vides).
-2. **Filtre de Contraste** : Écart global sur l'écart-type ($std \in [5, 80]$) pour éliminer les bruits numériques.
-3. **Filtre Structurel** : Utilisation d'HDBSCAN pour rejeter les images ne correspondant à aucun cluster anatomique cohérent (label `-1`).
-
----
-
-### 🧪 Tests & Validation
-
-Les performances sont évaluées via :
-- **F1-Score** : Pour équilibrer la précision et le rappel sur les cas pathologiques.
-- **Matrice de Confusion** : Pour surveiller spécifiquement les Faux Négatifs (patients cancéreux non détectés).
-- **Validation Croisée** : Utilisation exclusive des labels humains "Vérité Terrain" pour les métriques de validation finale, même lors de l'entraînement SSL.
+Pour lancer l'analyse de clustering et l'auto-labellisation :
+1. Ouvrez le notebook `notebooks/Clustering_images.ipynb`.
+2. Exécutez les cellules pour :
+   - Charger les embeddings.
+   - Entraîner le clusterer HDBSCAN.
+   - Visualiser les groupes via UMAP.
+   - Générer le `weak_orientation` mapping.
 
 ---
 
 ### 👤 Auteur
-**RandomFab**
+**RandomFab** 
 
 ### 🙏 Remerciements
-Merci aux contributeurs et aux experts pour les datasets initiaux de recherche médicale.
 
