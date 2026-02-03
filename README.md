@@ -54,35 +54,41 @@ Dans ce projet, l'AE standard n'apporte pas de gain par rapport au ResNet pour l
 
 #### 🔁 SSL & pseudo-labeling : stratégie
 La stratégie de pseudo-labeling par seuils (0.05/0.95) et validation stricte sur labels humains permet d'augmenter le dataset sans fuite de données. Une seconde passe permet de récupérer les images "neutres" (zone d'incertitude) et d'améliorer la couverture du jeu d'entraînement.
+---
 
+### 🧪 Nettoyage & Qualité des Données
+Afin de répondre aux exigences de traitement des valeurs aberrantes, le projet intègre :
+1. **Filtre d'Intensité** : Suppression des images (pixels mean $\le 10$).
+2. **Filtre de Contraste** : Écart global sur l'écart-type ($std \in [5, 80]$).
+3. **Filtre Structurel** : Utilisation du label `-1` d'HDBSCAN pour rejeter le bruit anatomique.
 
 ---
 
-### 📊 Architecture & Flux
+### 📊 Architecture & flux
 
-#### Flux de données
+#### Flux global de traitement
 ```mermaid
 graph TB
-    A[MRI Dataset] --> B{Modèle ResNet}
-    B --> C[Embeddings Parquet]
-    C --> D[StandardScaler & PCA]
-    D --> E[HDBSCAN Clustering]
+    A[MRI Raw Dataset] --> B[Nettoyage Technique Intensity/Contrast]
+    B --> C{ResNet-50 Feature Extractor}
+    C --> D[Embeddings Parquet]
+    D --> E[PCA & HDBSCAN Clustering]
     E --> F[UMAP Visualization]
-    F --> G[Weak labeling / Annotation]
+    F --> G[Weak Labeling : Orientation]
+    G --> H[Model SSL : Pathologie Cancer/Normal]
 ```
 
-#### Séquence de traitement
+#### Séquence d'entraînement semi-supervisée (Pseudo-Labeling)
 ```mermaid
 sequenceDiagram
-    participant D as Data
-    participant P as Preprocessing
-    participant M as Model (PyTorch)
-    participant C as Clustering (HDBSCAN)
+    participant L as Labels Experts (100)
+    participant U as Unlabeled (1400)
+    participant M as Model (ResNet-50)
     
-    D->>P: Chargement des images IRM
-    P->>M: Extraction des features (N dimensions)
-    M->>C: Analyse de densité
-    C->>D: Attribution orientation (Weak labeling)
+    L->>M: 1. Entraînement Initial (Baseline)
+    M->>U: 2. Inférence & Probabilités
+    U->>M: 3. Sélection Pseudo-labels (>95%)
+    M->>M: 4. Fine-Tuning Dataset Mixte
 ```
 
 ---
@@ -96,14 +102,15 @@ BrainScanAI/
 │   └── logger.py
 ├── 📂 mri_dataset_brain_cancer_oc/ # Données IRM
 │   ├── 📂 avec_labels/      # Images étiquetées (Cancer/Normal)
-│   ├── 📂 sans_label/       # Images brutes à classer
-│   └── features.parquet     # Embeddings calculés
-├── 📂 notebooks/            # Workflow de recherche et dev
-│   ├── Clustering_images.ipynb
-│   ├── Entrainement_semi_supervisé.ipynb
-│   ├── Exploration_labelisés.ipynb
-│   ├── Exploration_non_labelisés.ipynb
-│   └── Traitement_embeddings.ipynb
+│   ├── 📂 sans_label/       # Images brutes pour le SSL
+│   ├── features.parquet     # Embeddings calculés
+│   └── images_orientation.parquet # Mapping orientations calculé
+├── 📂 notebooks/            # Workflow Pipeline
+│   ├── 01_Exploration_labelisés.ipynb
+│   ├── 02_Exploration_non_labelisés.ipynb
+│   ├── 03_Traitement_embeddings.ipynb
+│   ├── 04_Clustering_images.ipynb
+│   └── 05_Entrainement_semi_supervisé.ipynb
 ├── pyproject.toml           # Dépendances (UV)
 └── README.md
 ```
