@@ -100,6 +100,7 @@ BrainScanAI/
 │   └── features.parquet     # Embeddings calculés
 ├── 📂 notebooks/            # Workflow de recherche et dev
 │   ├── Clustering_images.ipynb
+│   ├── Entrainement_semi_supervisé.ipynb
 │   ├── Exploration_labelisés.ipynb
 │   ├── Exploration_non_labelisés.ipynb
 │   └── Traitement_embeddings.ipynb
