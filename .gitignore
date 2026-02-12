@@ -12,3 +12,9 @@ wheels/
 .env
 
 mri_dataset_brain_cancer_oc
+
+*.pptx
+
+photo/
+
+BrainScanAI_bardouil_fabien/
